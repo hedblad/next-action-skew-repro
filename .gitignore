@@ -1,0 +1,7 @@
+node_modules
+.next*
+app/page.jsx
+app/other/page.jsx
+app/layout.jsx
+app/layout-widget.jsx
+instrumentation-client.js

@@ -1,0 +1,54 @@
+######## action, stale tab on a, server now .next-b
+09:28:04.339 --- deploying b (.next-b) ---
+09:28:04.801 request: POST http://localhost:3456/ next-action=003352ad1c1fe6660fc19a5b24577e331a54fe4880
+09:28:04.803 response: 200 POST x-nextjs-deployment-id=(none)
+09:28:04.805 request: chunk /_next/static/chunks/38s4ynjvqoi_a.js?dpl=b
+09:28:04.805 request: chunk /_next/static/chunks/3o_026efvrtb4.js?dpl=b
+09:28:04.816 navigated: http://localhost:3456/
+09:28:04.819 console.error: uncaught: Uncaught Error: Module 99427 was instantiated because it was required from module 52898, but the module factory is not available.
+09:28:07.803 --- result ---
+09:28:07.806 page shows: (nothing rendered)
+######## navigation, stale tab on a, server now .next-b
+09:28:09.219 --- deploying b (.next-b) ---
+09:28:09.704 request: RSC GET http://localhost:3456/other?_rsc=64EBvAagmAisvzuu
+09:28:09.710 response: 200 GET x-nextjs-deployment-id=b
+09:28:09.711 request: chunk /_next/static/chunks/38s4ynjvqoi_a.js?dpl=b
+09:28:09.712 request: chunk /_next/static/chunks/42y38s8jslkf9.js?dpl=b
+09:28:09.714 request: document http://localhost:3456/other (full page load)
+09:28:09.720 navigated: http://localhost:3456/other
+09:28:09.725 request: chunk /_next/static/chunks/38s4ynjvqoi_a.js?dpl=b
+09:28:09.725 request: chunk /_next/static/chunks/42y38s8jslkf9.js?dpl=b
+09:28:09.732 console.info: [instrumentation-client]
+09:28:09.751 navigated: http://localhost:3456/other
+09:28:12.707 --- result ---
+09:28:12.710 page shows: Other page rendered by deployment: b [New feature closed]
+######## action, stale tab on a, server now .next-b-workaround
+09:28:14.113 --- deploying b (.next-b-workaround) ---
+09:28:14.560 request: POST http://localhost:3456/ next-action=003352ad1c1fe6660fc19a5b24577e331a54fe4880
+09:28:14.569 response: 200 POST x-nextjs-deployment-id=b
+09:28:14.571 request: chunk /_next/static/chunks/38s4ynjvqoi_a.js?dpl=b
+09:28:14.571 request: chunk /_next/static/chunks/3o_026efvrtb4.js?dpl=b
+09:28:14.572 request: RSC GET http://localhost:3456/?_rsc=7h4hBxM0R4J5OFVf
+09:28:14.575 response: 200 GET x-nextjs-deployment-id=b
+09:28:14.578 request: document http://localhost:3456/ (full page load)
+09:28:14.583 navigated: http://localhost:3456/
+09:28:14.585 request: chunk /_next/static/chunks/38s4ynjvqoi_a.js?dpl=b
+09:28:14.586 request: chunk /_next/static/chunks/3o_026efvrtb4.js?dpl=b
+09:28:14.594 console.info: [instrumentation-client]
+09:28:14.614 navigated: http://localhost:3456/
+09:28:17.562 --- result ---
+09:28:17.564 page shows: Rendered by deployment: b Count: 1 IncrementOther page [New feature closed]
+######## navigation, stale tab on a, server now .next-b-workaround
+09:28:18.970 --- deploying b (.next-b-workaround) ---
+09:28:19.467 request: RSC GET http://localhost:3456/other?_rsc=64EBvAagmAisvzuu
+09:28:19.475 response: 200 GET x-nextjs-deployment-id=b
+09:28:19.477 request: chunk /_next/static/chunks/38s4ynjvqoi_a.js?dpl=b
+09:28:19.477 request: chunk /_next/static/chunks/42y38s8jslkf9.js?dpl=b
+09:28:19.478 request: document http://localhost:3456/other (full page load)
+09:28:19.484 navigated: http://localhost:3456/other
+09:28:19.486 request: chunk /_next/static/chunks/38s4ynjvqoi_a.js?dpl=b
+09:28:19.486 request: chunk /_next/static/chunks/42y38s8jslkf9.js?dpl=b
+09:28:19.496 console.info: [instrumentation-client]
+09:28:19.514 navigated: http://localhost:3456/other
+09:28:22.470 --- result ---
+09:28:22.472 page shows: Other page rendered by deployment: b [New feature closed]
