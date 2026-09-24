@@ -1,9 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Self-hosting guide: set a deployment ID for version skew protection.
+  // As the self-hosting guide recommends, for version skew protection.
   deploymentId: process.env.DEPLOYMENT_ID,
-  distDir: process.env.DIST_DIR ?? '.next',
-  ...(process.env.WORKAROUND_HEADER === '1' && {
+  // The workaround: send the deployment ID on every response, including Server Action responses.
+  ...(process.env.WORKAROUND === '1' && {
     headers: async () => [
       {
         source: '/:path*',

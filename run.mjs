@@ -1,87 +1,75 @@
-// Simulates a deploy under an open tab: load the page from deployment "a", replace the server
-// with deployment "b" on the same origin, then act in the stale tab.
+// Opens a tab on deployment "a", replaces the server with the new deployment on the same origin,
+// like a rolling deploy, and then submits the Server Action form or clicks a <Link> in that tab.
 //
-//   node run.mjs action      # Server Action that calls revalidatePath
-//   node run.mjs navigation  # client-side <Link> navigation
-//   NEW_DIST=.next-b-workaround node run.mjs action
+//   node run.mjs <action|navigation> <new deployment's directory under deployments/>
 import { spawn } from 'node:child_process';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { chromium } from 'playwright';
 
-const scenario = process.argv[2] ?? 'action';
-const newDist = process.env.NEW_DIST ?? '.next-b';
-const PORT = 3456;
-const origin = `http://localhost:${PORT}`;
+const [scenario, newDeployment] = process.argv.slice(2);
+const origin = 'http://localhost:3456';
 
-const start = async (id, distDir) => {
-  const proc = spawn('npx', ['next', 'start', '-p', String(PORT)], {
-    env: { ...process.env, DEPLOYMENT_ID: id, DIST_DIR: distDir, NEXT_TELEMETRY_DISABLED: '1' },
-    stdio: ['ignore', 'pipe', 'pipe'],
+const log = (message) => console.log(`  ${message}`);
+
+const startServer = async (deploymentId, directory) => {
+  const server = spawn('npx', ['next', 'start', '-p', '3456'], {
+    cwd: `deployments/${directory}`,
+    env: { ...process.env, DEPLOYMENT_ID: deploymentId },
   });
-  proc.stdout.on('data', (d) => process.stdout.write(`  [server ${id}] ${d}`));
-  proc.stderr.on('data', (d) => {
-    if (!/DEP0169|trace-deprecation/.test(d)) process.stdout.write(`  [server ${id}] ${d}`);
-  });
-  for (let i = 0; i < 100; i++) {
+  for (;;) {
     try {
-      if ((await fetch(origin)).ok) return proc;
-    } catch {}
-    await sleep(100);
+      await fetch(origin);
+      return server;
+    } catch {
+      await sleep(100);
+    }
   }
-  throw new Error(`server ${id} did not start`);
 };
 
-const stop = async (proc) => {
-  proc.kill('SIGTERM');
-  await new Promise((resolve) => proc.once('exit', resolve));
+const stopServer = async (server) => {
+  server.kill();
+  await new Promise((resolve) => server.once('exit', resolve));
 };
-
-const log = (msg) => console.log(`${new Date().toISOString().slice(11, 23)} ${msg}`);
 
 const browser = await chromium.launch();
 const page = await browser.newPage();
-page.on('console', (m) => log(`console.${m.type()}: ${m.text().split('\n')[0]}`));
-page.on('framenavigated', (f) => f === page.mainFrame() && log(`navigated: ${f.url()}`));
-page.on('request', (r) => {
-  const url = r.url();
-  if (r.method() === 'POST') log(`request: POST ${url} next-action=${r.headers()['next-action']}`);
-  else if (r.headers()['rsc']) log(`request: RSC GET ${url}`);
-  else if (r.resourceType() === 'document') log(`request: document ${url} (full page load)`);
-  else if (url.includes('/_next/static/chunks/') && url.includes('dpl=b')) log(`request: chunk ${url.replace(origin, '')}`);
-});
-// Playwright's pageerror event misses these, so collect uncaught errors in the page and forward them.
+
+// Playwright's pageerror event misses this crash, so forward uncaught errors from the page.
 await page.addInitScript(() => {
-  const report = (msg) => console.error(`uncaught: ${msg}`);
-  addEventListener('error', (e) => report(e.message));
-  addEventListener('unhandledrejection', (e) => report(String(e.reason?.message ?? e.reason)));
+  addEventListener('error', (event) => console.error(`uncaught: ${event.message}`));
 });
-page.on('response', async (r) => {
-  const req = r.request();
-  if (req.method() === 'POST' || req.headers()['rsc']) {
-    log(`response: ${r.status()} ${req.method()} x-nextjs-deployment-id=${r.headers()['x-nextjs-deployment-id'] ?? '(none)'}`);
+page.on('console', (message) => message.type() === 'error' && log(message.text()));
+
+let server = await startServer('a', 'a');
+await page.goto(origin);
+await page.waitForLoadState('networkidle');
+
+await stopServer(server);
+server = await startServer('b', newDeployment);
+
+// Only log from here on: what the stale tab does after the deploy.
+let reloaded = false;
+page.on('request', (request) => {
+  if (request.resourceType() === 'document') {
+    reloaded = true;
+    log(`full page load: ${request.url()}`);
+  } else if (!reloaded && request.url().includes('dpl=b')) {
+    log(`stale tab loads a chunk from b: ${request.url().replace(origin, '')}`);
+  }
+});
+page.on('response', (response) => {
+  const request = response.request();
+  if (request.method() === 'POST' || request.headers()['rsc']) {
+    const id = response.headers()['x-nextjs-deployment-id'] ?? '(missing)';
+    log(`${request.method()} response ${response.status()}, x-nextjs-deployment-id: ${id}`);
   }
 });
 
-let server = await start('a', '.next-a');
-await page.goto(origin);
-await page.waitForLoadState('networkidle');
-log(`stale tab ready: "${await page.textContent('#deployment')}"`);
-
-log(`--- deploying b (${newDist}) ---`);
-await stop(server);
-server = await start('b', newDist);
-
-if (scenario === 'action') {
-  await page.click('#increment');
-} else {
-  await page.click('#other-link');
-}
+await page.click(scenario === 'action' ? '#increment' : '#other-link');
 await sleep(3000);
-await page.waitForLoadState('networkidle').catch(() => {});
 
-log('--- result ---');
-const rendered = await page.evaluate(() => document.querySelector('main')?.innerText.replace(/\s+/g, ' ') ?? '(nothing rendered)');
-log(`page shows: ${rendered}`);
+const shown = await page.evaluate(() => document.querySelector('main')?.innerText ?? '(nothing)');
+log(`page shows: ${shown.replace(/\s+/g, ' ')}`);
 
 await browser.close();
-await stop(server);
+await stopServer(server);
