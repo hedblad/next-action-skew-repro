@@ -11,7 +11,7 @@ A `<Link>` navigation in the same situation gets `x-nextjs-deployment-id` and do
 ## Run it
 
 ```sh
-pnpm install --ignore-workspace
+pnpm install
 npx playwright install chromium
 ./repro.sh
 ```
